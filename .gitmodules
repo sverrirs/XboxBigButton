@@ -1,0 +1,3 @@
+[submodule "winusbnet"]
+	path = winusbnet
+	url = https://github.com/madwizard-thomas/winusbnet/
