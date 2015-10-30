@@ -3,6 +3,8 @@ A C# library and example project showing how to interface with the Xbox 360 Big 
 
 ![The Scene It game kit](http://1.bp.blogspot.com/-lRn76FpzitM/Vh1W2TxJ7mI/AAAAAAAABaw/LVQ4r_PY4ZI/s1600/02.jpg "The Scene It game kit")
 
+The project page can be found at [http://sverrirs.github.io/XboxBigButton/](http://sverrirs.github.io/XboxBigButton/)
+
 # Dependencies
 * Uses the [WinUsb.NET](https://github.com/madwizard-thomas/winusbnet/) project 
 * Requires the custom driver in the *XboxBigButton_WinUsbDriver* folder to be installed prior to running any of the code.
