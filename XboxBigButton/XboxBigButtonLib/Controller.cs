@@ -1,5 +1,8 @@
+using System;
+
 namespace XboxBigButton
 {
+    [Serializable]
     public enum Controller
     {
         Green = 0,

@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using MadWizard.WinUSBNet;
 
 namespace XboxBigButton
@@ -49,7 +43,9 @@ namespace XboxBigButton
 
         protected virtual void OnButtonStateChanged(XboxBigButtonDeviceEventArgs e)
         {
-            ButtonStateChanged?.Invoke(this, e);
+            var handler = ButtonStateChanged;
+            if( handler != null )
+                handler.Invoke(this, e);
         }
 
         #endregion
@@ -57,7 +53,7 @@ namespace XboxBigButton
         /// <summary>
         /// When set the device will filter out repeated presses on the same button
         /// </summary>
-        public bool ExcludeRepeats { get; private set; }
+        public bool ExcludeRepeats { get; set; }
         
 
         /// <summary>
@@ -66,16 +62,18 @@ namespace XboxBigButton
         /// <param name="customDeviceInterfaceGuid">Optional custom deviceInterfaceGuid in case the default GUID in the supplied driver is modified</param>
         public XboxBigButtonDevice(string customDeviceInterfaceGuid = null)
         {
-            if(!string.IsNullOrWhiteSpace(customDeviceInterfaceGuid) )
+            if(!string.IsNullOrEmpty(customDeviceInterfaceGuid) )
                 _deviceInterfaceGuid = customDeviceInterfaceGuid;
 
+            _bgWorker.WorkerReportsProgress = true;
             _bgWorker.DoWork += BgWorkerOnDoWork;
             _bgWorker.RunWorkerCompleted += BgWorkerOnRunWorkerCompleted;
+            _bgWorker.ProgressChanged += BgWorkerOnProgressChanged;
         }
 
         public void Connect()
         {
-            if( _device != null)
+            if ( _device != null)
                 throw new InvalidOperationException("XboxBigButtonDevice is already connected.");
 
             if( _terminate )
@@ -84,12 +82,11 @@ namespace XboxBigButton
             try
             {
                 _device = USBDevice.GetSingleDevice(_deviceInterfaceGuid);
-
-                // Start listening to the input channel
                 _bgWorker.RunWorkerAsync(_device);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Trace.WriteLine("XBB: Connect Exception: "+e.ToString());
                 _device = null;
                 throw;
             }
@@ -120,9 +117,9 @@ namespace XboxBigButton
             var device = e.Argument as USBDevice;
 
             // TODO: for now just get the first pipe, this will always be the subclass=93 interface that is the one that we want
-            var dInterface = device?.Interfaces[0];
+            var dInterface = device != null ? device.Interfaces[0] : null;
 
-            if (dInterface?.InPipe != null)
+            if (dInterface != null && dInterface.InPipe != null)
             {
                 // Only 5 bytes are ever transferred from the device
                 var inbuffer = new byte[5];
@@ -133,35 +130,36 @@ namespace XboxBigButton
                     if (_terminate)
                         break;
 
-                    // TODO: Include a timeout for the task so that the terminate clause can be successfully observed!
-                    Task<int> t = Task<int>.Factory.FromAsync(dInterface.InPipe.BeginRead, dInterface.InPipe.EndRead, inbuffer, 0, inbuffer.Length, null);
-
-                    t.ContinueWith(result =>
+                    var bytesRead = dInterface.InPipe.Read(inbuffer, 0, inbuffer.Length);
+                    if (bytesRead > 0)
                     {
-                        try
-                        {
-                            // If exclude repeated pushes of the same button sequence is enabled then ignore
-                            if (ExcludeRepeats)
-                            {
-                                if (inbuffer.SequenceEqual(prevbuffer))
-                                    return;
+                        bool sameMessageAsPreviously = false;
 
+                        // If exclude repeated pushes of the same button sequence is enabled then ignore
+                        if (ExcludeRepeats)
+                        {
+                            // Quickly and dirtily compare the two buffers to see if we're dealing with a repeated message
+                            if (inbuffer[0] == prevbuffer[0] && inbuffer[1] == prevbuffer[1] &&
+                                inbuffer[2] == prevbuffer[2] && inbuffer[3] == prevbuffer[3] &&
+                                inbuffer[4] == prevbuffer[4])
+                            {
+                                sameMessageAsPreviously = true;
+                            }
+                            else
+                            {
                                 inbuffer.CopyTo(prevbuffer, 0);
                             }
+                        }
 
+                        // If not same message or we don't care about repeated messages
+                        if (!ExcludeRepeats || !sameMessageAsPreviously)
+                        {
                             // TODO: Impose a minimum time between button presses (so that we won't get swamped with repeated button presses for the same buttons)
-                            
+
                             //Send the message to processing and raise the correct events
                             ProcessIncomingMessage(inbuffer);
                         }
-                        catch (Exception ex)
-                        {
-                            Debug.Print(ex.ToString());
-                        }
-                    });
-
-                    // Sleep for 200msec to allow for the USB port to process more messages
-                    Thread.Sleep(200);
+                    }
                 }
             }
         }
@@ -212,8 +210,15 @@ namespace XboxBigButton
             if ((inbuffer[4] & 128) == 128)
                 buttons |= Buttons.Y;
 
-            // Now raise the changed event and continue
-            OnButtonStateChanged(new XboxBigButtonDeviceEventArgs(controller, buttons));
+            // Now raise the changed event as a progress event and continue
+            _bgWorker.ReportProgress(1, new XboxBigButtonDeviceEventArgs(controller, buttons));
+        }
+
+        private void BgWorkerOnProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            var buttonState = e.UserState as XboxBigButtonDeviceEventArgs;
+            if (buttonState != null)
+                OnButtonStateChanged(buttonState);
         }
 
         private void BgWorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

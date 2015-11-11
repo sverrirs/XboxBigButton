@@ -2,7 +2,7 @@
 
 namespace XboxBigButton
 {
-    [Flags]
+    [Flags, Serializable]
     public enum Buttons
     {
         None = 0,
@@ -21,7 +21,7 @@ namespace XboxBigButton
         Y = 2048   
     }
 
-    public static class ButtonsExtensions
+    /*public static class ButtonsExtensions
     {
         /// <summary>
         /// Checks if the supplied check buttons are currently pressed (note that other buttons can be pressed)
@@ -55,5 +55,5 @@ namespace XboxBigButton
         {
             return (currentState & check) != check;
         }
-    }
+    }*/
 }

@@ -2,6 +2,7 @@ using System;
 
 namespace XboxBigButton
 {
+    [Serializable]
     public class XboxBigButtonDeviceEventArgs : EventArgs
     {
         /// <summary>
