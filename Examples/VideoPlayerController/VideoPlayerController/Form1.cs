@@ -23,26 +23,6 @@ namespace VideoPlayerController
         }
 
         /// <summary>
-        /// Brings the thread that created the specified window into the foreground and activates the window. 
-        /// Keyboard input is directed to the window.
-        /// </summary>
-        /// <param name="hWnd">A handle to the window that should be activated and brought to the foreground.</param>
-        /// <returns>If the window was brought to the foreground, the return value is true.
-        /// If the window was not brought to the foreground, the return value is false.</returns>
-        [DllImport("user32.DLL")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        /// <summary>
-        /// Determines whether the specified window handle identifies an existing window.
-        /// </summary>
-        /// <param name="hWnd"></param>
-        /// <returns></returns>
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool IsWindow(IntPtr hWnd);
-
-        /// <summary>
         /// The big button controller
         /// </summary>
         private readonly XboxBigButtonDevice _device;
@@ -120,65 +100,105 @@ namespace VideoPlayerController
                 return;
             }
 
-            string keysToSend;
-
-            // Which player are we dealing with
-            if (this.Player == Players.VLC)
-                keysToSend = ControlVLCPlayer(controller, buttons);
-            else if (this.Player == Players.Netflix)
-                keysToSend = ControlNetflix(controller, buttons);
-            else
-                return;
-
-            // If no keys then don't do anything
-            if (string.IsNullOrEmpty(keysToSend))
+            // If we can't find the correct window then exit
+            if (!FindWindow(this.Player))
                 return;
 
             // Set the window to foreground, only send keys if the window was successfully brought forward
-            if (SetForegroundWindow(_windowHandle))
+            if (Win32.SetForegroundWindow(_windowHandle))
             {
+                // Figure out what keys to send to the window
+                string keysToSend = this.Player == Players.VLC 
+                                    ? GetVLCKeysToSend(controller, buttons) 
+                                    : this.Player == Players.Netflix 
+                                    ? GetNetflixKeysToSend(controller, buttons) 
+                                    : null;
+                
                 // Send the keys
-                SendKeys.SendWait(keysToSend);
+                if (!string.IsNullOrEmpty(keysToSend))
+                {
+                    SendKeys.SendWait(keysToSend);
+                }
+
+                // Now figure out the size of the window to be able to send mouse click events to it
+                var windowRect = GetForegroundWindowBounds(_windowHandle);
+                if( windowRect != Rectangle.Empty)
+                { 
+                    // What mouse-click should we send
+                    Point mousePointToClick = this.Player == Players.VLC 
+                                                ? GetVLCPlayerMouseClickToSend(controller, buttons, windowRect) 
+                                                : this.Player == Players.Netflix 
+                                                ? GetNetflixMouseClickToSend(controller, buttons, windowRect)
+                                                : Point.Empty;
+                
+
+                    // Send the mouse click
+                    if ( mousePointToClick != Point.Empty )
+                    { 
+                        var oldPos = Cursor.Position;
+
+                        // get screen coordinates
+                        Win32.ClientToScreen(_windowHandle, ref mousePointToClick);
+
+                        // Move the mouse to the position
+                        Cursor.Position = new Point(mousePointToClick.X, mousePointToClick.Y);
+
+                        // Instigate a "click" event (down and up)
+                        var inputMouseDown = new Win32.INPUT {Type = 0};  // Type=0 is mouse
+                        inputMouseDown.Data.Mouse.Flags = 0x0002; // left button down
+                        var inputMouseUp = new Win32.INPUT {Type = 0};
+                        inputMouseUp.Data.Mouse.Flags = 0x0004; // left button up
+                        var inputs = new[] { inputMouseDown, inputMouseUp };
+                        Win32.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Win32.INPUT)));
+
+                        // return mouse 
+                        Cursor.Position = oldPos;
+                    }
+                }
 
                 // Save the time if we successfully sent keys
                 _lastKeyTime = DateTime.Now;
             }
         }
 
-        private string ControlNetflix(Controller controller, Buttons buttons)
+        private Rectangle GetForegroundWindowBounds(IntPtr windowHandle)
         {
-            // If we don't have the VLC window yet or the window has been restarted (has a new handle)
-            // then let's try to find the handle
-            if (!IsWindowHandleValid(_windowHandle))
+            Win32.RECT rct;
+            if (!Win32.GetWindowRect(windowHandle, out rct))
             {
-                _windowHandle = FindWindowHandle("Netflix - ");
-
-                // No valid Netflix browser windowhandle could be found, exit
-                if (!IsWindowHandleValid(_windowHandle))
-                    return null;
+                return Rectangle.Empty;
             }
-
-            // Translate key mappings
-            return GetNetflixKeysToSend(controller, buttons);
+            return rct.ToRectangle();
         }
 
-        private string ControlVLCPlayer(Controller controller, Buttons buttons)
+        private Point GetVLCPlayerMouseClickToSend(Controller controller, Buttons buttons, Rectangle windowRect)
         {
-            // If we don't have the VLC window yet or the window has been restarted (has a new handle)
-            // then let's try to find the handle
-            if (!IsWindowHandleValid(_windowHandle))
-            {
-                _windowHandle = FindWindowHandle("VLC media player");
-
-                // No valid VLC windowhandle could be found, exit
-                if (!IsWindowHandleValid(_windowHandle))
-                    return null;
-            }
-
-            // Translate key mappings
-            return GetVLCKeysToSend(controller, buttons);
+            return Point.Empty;
         }
 
+        private Point GetNetflixMouseClickToSend(Controller controller, Buttons buttons, Rectangle windowRect)
+        {
+            // Press the next-up window in the lower right-hand corner
+            if (buttons.IsPressed(Buttons.A))
+            {
+                // 350 from the right og 280 from the bottom
+                return new Point(windowRect.Width - 350, windowRect.Height - 280);
+            }
+
+            // Press that annoying "are you still watching" dialog
+            if (buttons.IsPressed(Buttons.B))
+            {
+                // The window is 409x286 pixels and is placed directly in the middle of the screen
+                // the continue button is in the top third part of the screen, so click 1/6th down from the top (48px) and half of the width of the screen
+                return new Point(
+                    windowRect.Width/2,
+                    ((windowRect.Height-286)/2)+48 
+                    );
+            }
+
+            return Point.Empty;
+        }
+        
         private string GetNetflixKeysToSend(Controller controller, Buttons buttons)
         {
             string keys = "";
@@ -258,6 +278,22 @@ namespace VideoPlayerController
             return keys;
         }
 
+        private bool FindWindow(Players player)
+        {
+            // If we don't have the VLC window yet or the window has been restarted (has a new handle)
+            // then let's try to find the handle
+            if (!IsWindowHandleValid(_windowHandle))
+            {
+                _windowHandle = FindWindowHandle(player == Players.Netflix ? "Netflix - " : "VLC media player");
+
+                // No valid Netflix browser windowhandle could be found, exit
+                if (!IsWindowHandleValid(_windowHandle))
+                    return false;
+            }
+
+            return true;
+        }
+
         private IntPtr FindWindowHandle(string windowTitle)
         {
             foreach (Process proc in Process.GetProcesses())
@@ -272,7 +308,7 @@ namespace VideoPlayerController
 
         private bool IsWindowHandleValid(IntPtr windowHandle)
         {
-            return windowHandle != IntPtr.Zero && IsWindow(windowHandle);
+            return windowHandle != IntPtr.Zero && Win32.IsWindow(windowHandle);
         }
 
 
