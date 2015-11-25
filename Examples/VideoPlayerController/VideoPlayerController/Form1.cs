@@ -227,9 +227,9 @@ namespace VideoPlayerController
             if (buttons.IsPressed(Buttons.Left))
                 keys += "^({LEFT})";
 
-            // Skip medium backward
+            // Skip short backward
             if (buttons.IsPressed(Buttons.Right))
-                keys += "^({RIGHT})";
+                keys += "%({RIGHT})";
 
             // Volume Up
             if (buttons.IsPressed(Buttons.Up))
@@ -296,11 +296,8 @@ namespace VideoPlayerController
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
-            if(_device != null )
-            {
-                _device.Disconnect();
-                _device.Dispose();
-            }
+            // Disconnect the device if it has been created
+            _device?.Disconnect();
         }
 
         private void Form1_Load(object sender, EventArgs e)
