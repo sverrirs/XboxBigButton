@@ -6,7 +6,7 @@ using MadWizard.WinUSBNet;
 
 namespace XboxBigButton
 {
-    public class XboxBigButtonDevice : IDisposable
+    public class XboxBigButtonDevice
     {
         #region Members
 
@@ -73,11 +73,11 @@ namespace XboxBigButton
 
         public void Connect()
         {
+            if (_terminate)
+                throw new InvalidOperationException("XboxBigButtonDevice has already been terminated.");
+
             if ( _device != null)
                 throw new InvalidOperationException("XboxBigButtonDevice is already connected.");
-
-            if( _terminate )
-                throw new InvalidOperationException("XboxBigButtonDevice has already been terminated.");
 
             try
             {
@@ -94,24 +94,18 @@ namespace XboxBigButton
 
         public void Disconnect()
         {
-            if (_device == null)
+            if (_device == null || _terminate )
                 return;
 
+            // Indicate that we want to terminate
             _terminate = true;
 
+            // Abort any waiting tasks on the main input pipe
+            _device.Interfaces[0].InPipe.Abort();
+            
             // TODO: Perhaps we should wait until termination has been confirmed?
         }
-
-
-        public void Dispose()
-        {
-            if (_device != null)
-            {
-                _device.Dispose();
-                _device = null;
-            }
-        }
-
+        
         private void BgWorkerOnDoWork(object sender, DoWorkEventArgs e)
         {
             var device = e.Argument as USBDevice;
@@ -127,10 +121,24 @@ namespace XboxBigButton
 
                 while (true)
                 {
+                    // If we have been instructed to terminate the USB connection end the background thread 
+                    // and move into cleanup.
                     if (_terminate)
-                        break;
+                        return;
 
-                    var bytesRead = dInterface.InPipe.Read(inbuffer, 0, inbuffer.Length);
+                    int bytesRead = 0;
+                    try
+                    {
+                        bytesRead = dInterface.InPipe.Read(inbuffer, 0, inbuffer.Length);
+                    }
+                    catch (USBException uex)    
+                    {
+                        // This exception is thrown when we terminate the Pipe when disposing of the connection
+                        // if the error string contains this value then silently ignore the error and move to terminate the app
+                        if (!string.IsNullOrEmpty(uex.Message) && !uex.Message.Contains("Failed to read from pipe."))
+                            throw;
+                    }
+
                     if (bytesRead > 0)
                     {
                         bool sameMessageAsPreviously = false;
@@ -154,8 +162,6 @@ namespace XboxBigButton
                         // If not same message or we don't care about repeated messages
                         if (!ExcludeRepeats || !sameMessageAsPreviously)
                         {
-                            // TODO: Impose a minimum time between button presses (so that we won't get swamped with repeated button presses for the same buttons)
-
                             //Send the message to processing and raise the correct events
                             ProcessIncomingMessage(inbuffer);
                         }
@@ -223,7 +229,12 @@ namespace XboxBigButton
 
         private void BgWorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            // TODO: Process any possible error termination signals here and communicate back to caller
+            // Cleanup the USB device connection and free all resources
+            if (_device != null)
+            {
+                _device.Dispose();
+                _device = null;
+            }
         }
     }
 }
