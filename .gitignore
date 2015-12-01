@@ -211,6 +211,9 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 
+# Winmerge backup files
+*.bak
+
 #################################
 # Unity 3d Specific stuff
 /[Ll]ibrary/
