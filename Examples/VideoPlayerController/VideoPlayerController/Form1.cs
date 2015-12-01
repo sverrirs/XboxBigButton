@@ -245,11 +245,11 @@ namespace VideoPlayerController
 
             // Skip medium forward
             if (buttons.IsPressed(Buttons.Left))
-                keys += "^({LEFT})";
+                keys += "%({LEFT})";
 
             // Skip short backward
             if (buttons.IsPressed(Buttons.Right))
-                keys += "%({RIGHT})";
+                keys += "^({RIGHT})";
 
             // Volume Up
             if (buttons.IsPressed(Buttons.Up))

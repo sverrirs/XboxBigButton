@@ -101,8 +101,17 @@ namespace XboxBigButton
             _terminate = true;
 
             // Abort any waiting tasks on the main input pipe
-            _device.Interfaces[0].InPipe.Abort();
-            
+            try
+            {
+                _device.Interfaces[0].InPipe.Abort();
+            }
+            catch (USBException e)
+            {
+                // This exception happens if the USB device has been unplugged 
+                // before disconnecting, we can safely ignore it
+                //USBException: Failed to abort pipe. -
+            }
+
             // TODO: Perhaps we should wait until termination has been confirmed?
         }
         
