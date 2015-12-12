@@ -1,7 +1,7 @@
 [Version]
 Signature="$Windows NT$"
-Class=CustomUSBDevices
-ClassGuid={a503e2d3-a031-49dc-b684-c99085dbfe92}
+Class=Media
+ClassGuid={4d36e96c-e325-11ce-bfc1-08002be10318}
 Provider=%ProviderName%
 DriverVer=10/10/2015,1.0.0
 ; CatalogFile=catalog.cat
@@ -15,16 +15,6 @@ DriverVer=10/10/2015,1.0.0
 
 [MyWinUSBDevice.NTamd64]
 %DeviceName%=USB_Install, USB\VID_045e&PID_02a0
-
-;=========================================================================================
-;ClassInstall32 and ClassInstall_AddReg sections used to make new device manager category.
-;=========================================================================================
-[ClassInstall32]
-AddReg=ClassInstall_AddReg
-
-[ClassInstall_AddReg]
-HKR,,,,%DEVICEMANAGERCATEGORY%
-HKR,,Icon,,"-20"
 
 ; =================== Installation ===================
 
