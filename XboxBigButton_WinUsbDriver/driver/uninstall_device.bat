@@ -1,5 +1,6 @@
 @echo off
 
+REM Print the path of the working directory to confirm that we're indeed inside the INSTDIR\Driver folder
 cd
 
 goto check_Permissions
@@ -37,7 +38,6 @@ REM REMOVE THE DEVICE
 devcon.exe remove =media "*VID_045e&PID_02a0*"
 if NOT errorlevel == 0 (
     echo Can not remove USB device, error %errorlevel%
-    pause >nul
     exit /b %errorlevel%
 )
 echo USB device successfully uninstalled from the system
@@ -52,17 +52,14 @@ pause >nul
 devcon.exe dp_delete %OEM_FILE%
 if NOT errorlevel == 0 (
     echo Can not delete the inf file named %OEM_FILE% from DriverStore, error %errorlevel%
-    pause >nul
     exit /b %errorlevel%
 )
 echo OEM file %OEM_FILE% successfully deleted from the DriverStore
 
 :success
 echo Success
-pause >nul
 exit /b 0
 
 :fail
 echo Failure
-pause >nul
 exit /b 100

@@ -250,7 +250,7 @@ Section "" ; No components page, name is not important
   # call UserInfo plugin to get user info.  The plugin puts the result in the stack
   UserInfo::getAccountType
   Pop $0
-  DetailPrint "AccountType: $0"
+  ;DetailPrint "AccountType: $0"
   
   # compare the result with the string "Admin" to see if the user is admin.
   ${If} $0 == "Admin"
@@ -265,7 +265,6 @@ Section "" ; No components page, name is not important
   ${If} ${RunningX64}
 	DetailPrint "Detected a 64 bit Windows architecture"
 	${If} "${ARCH}" == "x86"
-    
       MessageBox MB_OK|MB_ICONEXCLAMATION "This installer is for 64bit Windows versions but has detected a 32bit operating system! Please download the x86 version of this installer."
       Quit
 	${EndIf}
