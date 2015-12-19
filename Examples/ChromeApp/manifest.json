@@ -1,0 +1,31 @@
+{
+  "name": "Xbox 360 Big Button Controller Example",
+  "description": "Shows how the custom USB driver can be leveraged in Chrome apps and the future WebUSB standard.",
+  "version": "0.1",
+  "manifest_version": 2,
+  "app": {
+    "background": {
+      "scripts": ["background.js"]
+    }
+  },
+  
+  // Requires usb permissions
+  "permissions": ["usb"],
+  
+  // We will request permission from the user upon first usage
+  "optional_permissions": 
+    [{
+      // these values must be in decimal numbers and not HEX: USB\VID_045E&PID_02A0
+      "usbDevices": [{ "vendorId": 1118, "productId": 672, "interfaceId": 0 }]
+    }],
+    
+   // Some icons
+  "icons": 
+  { 
+    "16": "img/icon-16x16.png", 
+    "32": "img/icon-32x32.png",
+    "96": "img/icon-96x96.png",
+    "128": "img/icon-144x144.png",
+    "144": "img/icon-144x144.png"
+  }
+}
