@@ -119,6 +119,15 @@ namespace VideoPlayerController
                 {
                     SendKeys.SendWait(keysToSend);
                 }
+                else
+                {
+                    // Check to see if we should send any windows system keys, e.g. for Netflix audio control
+                    int systemKeysToSend = GetSystemKeysToSend(controller, buttons);
+                    if (systemKeysToSend > 0)
+                    {
+                        Win32.SendMessageW(_windowHandle, Win32.WM_APPCOMMAND, _windowHandle, (IntPtr) systemKeysToSend);
+                    }
+                }
 
                 // Now figure out the size of the window to be able to send mouse click events to it
                 var windowRect = GetForegroundWindowBounds(_windowHandle);
@@ -159,6 +168,24 @@ namespace VideoPlayerController
                 // Save the time if we successfully sent keys
                 _lastKeyTime = DateTime.Now;
             }
+        }
+
+        private int GetSystemKeysToSend(Controller controller, Buttons buttons)
+        {
+            // Volume Up
+            if (buttons.IsPressed(Buttons.Up))
+                return Win32.APPCOMMAND_VOLUME_UP;
+
+            // Volume Down
+            if (buttons.IsPressed(Buttons.Down))
+                return Win32.APPCOMMAND_VOLUME_DOWN;
+
+            // Mute
+            if (buttons.IsPressed(Buttons.Y))
+                return Win32.APPCOMMAND_VOLUME_MUTE;
+
+            // Nothing
+            return 0;
         }
 
         private Rectangle GetForegroundWindowBounds(IntPtr windowHandle)

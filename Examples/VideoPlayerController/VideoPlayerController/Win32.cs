@@ -10,6 +10,12 @@ namespace VideoPlayerController
 {
     internal static class Win32
     {
+        // Used to send volume commands to Windows
+        public const int APPCOMMAND_VOLUME_MUTE = 0x80000;
+        public const int APPCOMMAND_VOLUME_UP = 0xA0000;
+        public const int APPCOMMAND_VOLUME_DOWN = 0x90000;
+        public const int WM_APPCOMMAND = 0x319;
+
         /// <summary>
         /// Brings the thread that created the specified window into the foreground and activates the window. 
         /// Keyboard input is directed to the window.
@@ -64,6 +70,13 @@ namespace VideoPlayerController
         internal static extern uint SendInput(uint nInputs,
            [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs,
            int cbSize);
+
+
+        /// <summary>
+        /// Sends complex system messages
+        /// </summary>
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SendMessageW(IntPtr hWnd, int Msg,IntPtr wParam, IntPtr lParam);
 
 #pragma warning disable 649
         internal struct INPUT
