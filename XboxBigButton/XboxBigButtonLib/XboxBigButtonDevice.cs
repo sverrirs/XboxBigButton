@@ -9,12 +9,13 @@ namespace XboxBigButton
     public class XboxBigButtonDevice
     {
         #region Members
+        private readonly Guid _devicePublicId = Guid.NewGuid();
 
         /// <summary>
         /// This is the default device GUID that is installed with the supplied custom driver. If you change this value in the driver .inf file then 
         /// this must be overwritten as well through the constructor.
         /// </summary>
-        private string _deviceInterfaceGuid = @"{EF5B294C-E3E3-4914-B5BB-037866450C41}";
+        private readonly string _deviceInterfaceGuid = @"{EF5B294C-E3E3-4914-B5BB-037866450C41}";
 
         /// <summary>
         /// The actual WinUSB connected device, if connected and working properly this will be a non-null value
@@ -25,7 +26,7 @@ namespace XboxBigButton
         /// The background thread that is monitoring the asynchonous input pipe on the USB device
         /// This is just a simple BackgroundWorker for now.
         /// </summary>
-        private BackgroundWorker _bgWorker = new BackgroundWorker();
+        private readonly BackgroundWorker _bgWorker = new BackgroundWorker();
 
         /// <summary>
         /// Boolean used to terminate the background thread and processing on the USB port, the device will still be connected though
@@ -54,7 +55,9 @@ namespace XboxBigButton
         /// When set the device will filter out repeated presses on the same button
         /// </summary>
         public bool ExcludeRepeats { get; set; }
-        
+
+        public Guid DevicePublicId => _devicePublicId;
+
 
         /// <summary>
         /// Constructs a new instance of the XboxBigButtonDevice

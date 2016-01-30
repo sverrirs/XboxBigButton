@@ -7,13 +7,14 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using XboxBigButton;
 
 namespace VideoPlayerController
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         public enum Players
         {
@@ -25,12 +26,12 @@ namespace VideoPlayerController
         /// <summary>
         /// The big button controller
         /// </summary>
-        private readonly XboxBigButtonDevice _device;
+        private XboxBigButtonDevice _device;
 
         /// <summary>
         /// Time when the last keypress was received from the controller, use this to discard excessive repeating keys
         /// </summary>
-        private DateTime _lastKeyTime = DateTime.MinValue;
+        private Tuple<Controller, Buttons, DateTime> _lastKeyTime = null;
 
         /// <summary>
         /// Handle to the VLC window
@@ -41,6 +42,13 @@ namespace VideoPlayerController
         /// Which player is selected in the UI
         /// </summary>
         private Players _player;
+
+        private OnScreenPopupForm _messageBox = new OnScreenPopupForm();
+
+        /// <summary>
+        ///  Used to lock the <see cref="SendKeysToWindow"/> function critical section
+        /// </summary>
+        private readonly object _buttonHandlerLock = new object();
         
         /// <summary>
         /// Gets or sets which video player the remote controls control
@@ -62,7 +70,7 @@ namespace VideoPlayerController
             }
         }
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
 
@@ -70,6 +78,40 @@ namespace VideoPlayerController
             _device.ButtonStateChanged += _device_ButtonStateChanged;
 
             _device.Connect();
+        }
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                components?.Dispose();
+                components = null;
+
+                _messageBox?.Dispose();
+                _messageBox = null;
+
+                _device?.Disconnect();
+                _device = null;
+            }
+
+            base.Dispose(disposing);
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            // Disconnect the device if it has been created
+            _device?.Disconnect();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            // Initially select the VLC button
+            cbUsingVLCMediaPlayer.Checked = true;
+            this.Player = Players.VLC;
         }
 
         private void _device_ButtonStateChanged(object sender, XboxBigButtonDeviceEventArgs e)
@@ -82,91 +124,118 @@ namespace VideoPlayerController
 
         private void SendKeysToWindow(Controller controller, Buttons buttons)
         {
-            // If the last key event was within tolerance then don't listen
-            if ((DateTime.Now - _lastKeyTime).TotalMilliseconds < 500)
-                return;
-
-            // The back button controls which player we're dealing with
-            if (buttons.IsPressed(Buttons.Back))
+            lock (_buttonHandlerLock)
             {
-                if (cbUsingVLCMediaPlayer.Checked)
-                    cbUsingNetflix.Checked = true;
-                else
-                    cbUsingVLCMediaPlayer.Checked = true;
+                var timeNow = DateTime.Now;
+
+                // If the last key event was within tolerance then don't listen
+                if (_lastKeyTime != null &&
+                    _lastKeyTime.Item1 == controller &&
+                    _lastKeyTime.Item2 == buttons &&
+                    (timeNow - _lastKeyTime.Item3).TotalSeconds < .5d)
+                {
+                    //Debug.Print($"[{DateTime.Now.ToString("HH:mm:ss:ffff")}] [{Thread.CurrentThread.ManagedThreadId}] Ignoring Multiple Keypresses for {_lastKeyTime.Item1} > {_lastKeyTime.Item2} : Time since last {(timeNow - _lastKeyTime.Item3).TotalMilliseconds}msec");
+                    return;
+                }
 
                 // Save the time if we successfully sent keys
-                _lastKeyTime = DateTime.Now;
+                _lastKeyTime = new Tuple<Controller, Buttons, DateTime>(controller, buttons, timeNow);
 
-                return;
-            }
-
-            // If we can't find the correct window then exit
-            if (!FindWindow(this.Player))
-                return;
-
-            // Set the window to foreground, only send keys if the window was successfully brought forward
-            if (Win32.SetForegroundWindow(_windowHandle))
-            {
-                // Figure out what keys to send to the window
-                string keysToSend = this.Player == Players.VLC 
-                                    ? GetVLCKeysToSend(controller, buttons) 
-                                    : this.Player == Players.Netflix 
-                                    ? GetNetflixKeysToSend(controller, buttons) 
-                                    : null;
+                //Debug.Print($"[{DateTime.Now.ToString("HH:mm:ss:ffff")}] [{Thread.CurrentThread.ManagedThreadId}] Processing Keypress for {controller} > {buttons} : Time {timeNow.ToString("HH:mm:ss:fffff")}");
                 
-                // Send the keys
-                if (!string.IsNullOrEmpty(keysToSend))
+                // The back button controls which player we're dealing with
+                if (buttons.IsPressed(Buttons.Back))
                 {
-                    SendKeys.SendWait(keysToSend);
+                    if (cbUsingVLCMediaPlayer.Checked)
+                        cbUsingNetflix.Checked = true;
+                    else
+                        cbUsingVLCMediaPlayer.Checked = true;
+
+                    // Save the time if we successfully sent keys
+                    _lastKeyTime = new Tuple<Controller, Buttons, DateTime>(controller, buttons, timeNow);
+
+                    return;
                 }
-                else
+
+                // If we can't find the correct window then exit
+                if (!FindWindow(this.Player))
                 {
-                    // Check to see if we should send any windows system keys, e.g. for Netflix audio control
-                    int systemKeysToSend = GetSystemKeysToSend(controller, buttons);
-                    if (systemKeysToSend > 0)
+                    //Debug.Print($"[{DateTime.Now.ToString("HH:mm:ss:ffff")}] [{Thread.CurrentThread.ManagedThreadId}] {controller} > {buttons} : Error no window found for {this.Player}");
+                    return;
+                }
+
+                // Set the window to foreground, only send keys if the window was successfully brought forward
+                if (Win32.SetForegroundWindow(_windowHandle))
+                {
+                    // Figure out what keys to send to the window
+                    string keysToSend = this.Player == Players.VLC
+                        ? GetVLCKeysToSend(controller, buttons)
+                        : this.Player == Players.Netflix
+                            ? GetNetflixKeysToSend(controller, buttons)
+                            : null;
+
+                    // Send the keys
+                    if (!string.IsNullOrEmpty(keysToSend))
                     {
-                        Win32.SendMessageW(_windowHandle, Win32.WM_APPCOMMAND, _windowHandle, (IntPtr) systemKeysToSend);
+                        SendKeys.SendWait(keysToSend);
                     }
-                }
-
-                // Now figure out the size of the window to be able to send mouse click events to it
-                var windowRect = GetForegroundWindowBounds(_windowHandle);
-                if( windowRect != Rectangle.Empty)
-                { 
-                    // What mouse-click should we send
-                    Point mousePointToClick = this.Player == Players.VLC 
-                                                ? GetVLCPlayerMouseClickToSend(controller, buttons, windowRect) 
-                                                : this.Player == Players.Netflix 
-                                                ? GetNetflixMouseClickToSend(controller, buttons, windowRect)
-                                                : Point.Empty;
-                
-
-                    // Send the mouse click
-                    if ( mousePointToClick != Point.Empty )
-                    { 
-                        var oldPos = Cursor.Position;
-
-                        // get screen coordinates
-                        Win32.ClientToScreen(_windowHandle, ref mousePointToClick);
-
-                        // Move the mouse to the position
-                        Cursor.Position = new Point(mousePointToClick.X, mousePointToClick.Y);
-
-                        // Instigate a "click" event (down and up)
-                        var inputMouseDown = new Win32.INPUT {Type = 0};  // Type=0 is mouse
-                        inputMouseDown.Data.Mouse.Flags = 0x0002; // left button down
-                        var inputMouseUp = new Win32.INPUT {Type = 0};
-                        inputMouseUp.Data.Mouse.Flags = 0x0004; // left button up
-                        var inputs = new[] { inputMouseDown, inputMouseUp };
-                        Win32.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Win32.INPUT)));
-
-                        // return mouse 
-                        Cursor.Position = oldPos;
+                    else
+                    {
+                        // Check to see if we should send any windows system keys, e.g. for Netflix audio control
+                        // Todo: refactor this to simplify
+                        int systemKeysToSend = GetSystemKeysToSend(controller, buttons);
+                        if (systemKeysToSend > 0)
+                        {
+                            if (systemKeysToSend == Win32.APPCOMMAND_VOLUME_MUTE)
+                            {
+                                var muteState = AudioManager.ToggleMasterVolumeMute() ? "MUTED" : "UNMUTED";
+                                _messageBox.ShowMessage($"Volume is {muteState}");
+                            }
+                            else if (systemKeysToSend == Win32.APPCOMMAND_VOLUME_DOWN)
+                                _messageBox.ShowMessage($"Volume {Math.Round(AudioManager.StepMasterVolume(-10))}%");
+                            else if (systemKeysToSend == Win32.APPCOMMAND_VOLUME_UP)
+                                _messageBox.ShowMessage($"Volume {Math.Round(AudioManager.StepMasterVolume(10))}%");
+                        }
                     }
-                }
 
-                // Save the time if we successfully sent keys
-                _lastKeyTime = DateTime.Now;
+                    // Now figure out the size of the window to be able to send mouse click events to it
+                    var windowRect = GetForegroundWindowBounds(_windowHandle);
+                    if (windowRect != Rectangle.Empty)
+                    {
+                        // What mouse-click should we send
+                        Point mousePointToClick = this.Player == Players.VLC
+                            ? GetVLCPlayerMouseClickToSend(controller, buttons, windowRect)
+                            : this.Player == Players.Netflix
+                                ? GetNetflixMouseClickToSend(controller, buttons, windowRect)
+                                : Point.Empty;
+
+
+                        // Send the mouse click
+                        if (mousePointToClick != Point.Empty)
+                        {
+                            var oldPos = Cursor.Position;
+
+                            // get screen coordinates
+                            Win32.ClientToScreen(_windowHandle, ref mousePointToClick);
+
+                            // Move the mouse to the position
+                            Cursor.Position = new Point(mousePointToClick.X, mousePointToClick.Y);
+
+                            // Instigate a "click" event (down and up)
+                            var inputMouseDown = new Win32.INPUT {Type = 0}; // Type=0 is mouse
+                            inputMouseDown.Data.Mouse.Flags = 0x0002; // left button down
+                            var inputMouseUp = new Win32.INPUT {Type = 0};
+                            inputMouseUp.Data.Mouse.Flags = 0x0004; // left button up
+                            var inputs = new[] {inputMouseDown, inputMouseUp};
+                            Win32.SendInput((uint) inputs.Length, inputs, Marshal.SizeOf(typeof (Win32.INPUT)));
+
+                            // return mouse 
+                            Cursor.Position = oldPos;
+                        }
+                    }
+
+                   // Debug.Print($"[{DateTime.Now.ToString("HH:mm:ss:ffff")}] [{Thread.CurrentThread.ManagedThreadId}] Finished {controller} > {buttons} : Time {timeNow.ToString("HH:mm:ss:fffff")}");
+                }
             }
         }
 
@@ -250,8 +319,8 @@ namespace VideoPlayerController
                 keys += "f";
 
             // Mute
-            if (buttons.IsPressed(Buttons.Y))
-                keys += "m";
+            /*if (buttons.IsPressed(Buttons.Y))
+                keys += "m";*/
 
             return keys;
         }
@@ -357,17 +426,7 @@ namespace VideoPlayerController
             this.Player = Players.Netflix;
         }
 
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            // Disconnect the device if it has been created
-            _device?.Disconnect();
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            // Initially select the VLC button
-            cbUsingVLCMediaPlayer.Checked = true;
-        }
+        
     }
 
     public static class ButtonsExtensions

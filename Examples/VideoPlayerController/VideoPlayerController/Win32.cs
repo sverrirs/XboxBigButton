@@ -16,6 +16,10 @@ namespace VideoPlayerController
         public const int APPCOMMAND_VOLUME_DOWN = 0x90000;
         public const int WM_APPCOMMAND = 0x319;
 
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int processId);
+
+
         /// <summary>
         /// Brings the thread that created the specified window into the foreground and activates the window. 
         /// Keyboard input is directed to the window.
