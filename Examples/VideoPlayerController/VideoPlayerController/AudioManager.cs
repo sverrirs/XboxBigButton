@@ -1,42 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+// ReSharper disable SuspiciousTypeConversion.Global
+// ReSharper disable InconsistentNaming
 
 namespace VideoPlayerController
 {
     /// <summary>
     /// Controls audio using the Windows CoreAudio API
     /// from: http://stackoverflow.com/questions/14306048/controling-volume-mixer
+    /// and: http://netcoreaudio.codeplex.com/
     /// </summary>
     public static class AudioManager
     {
-        /*public static void Test(IntPtr windowHandle)
-        {
-            int pID = 0;
-            Win32.GetWindowThreadProcessId(windowHandle, out pID);
-            if (pID == 0)
-                return;
+        #region Master Volume Manipulation
 
-            // display mute state & volume level (% of master)
-            Debug.Print("Mute:" + GetApplicationMute(pID));
-            Debug.Print("Volume:" + GetApplicationVolume(pID));
-
-            // mute the application
-            //SetApplicationMute(app, true);
-
-            // set the volume to half of master volume (50%)
-            //SetApplicationVolume(app, 50);
-        }
-
-        public static void Test()
-        {
-            Debug.Print("Master Volume:" + GetMasterVolume());
-        }*/
-
+        /// <summary>
+        /// Gets the current master volume in scalar values (percentage)
+        /// </summary>
+        /// <returns>-1 in case of an error, if successful the value will be between 0 and 100</returns>
         public static float GetMasterVolume()
         {
             IAudioEndpointVolume masterVol = null;
@@ -48,7 +29,7 @@ namespace VideoPlayerController
 
                 float volumeLevel;
                 masterVol.GetMasterVolumeLevelScalar(out volumeLevel);
-                return volumeLevel * 100;
+                return volumeLevel*100;
             }
             finally
             {
@@ -57,6 +38,11 @@ namespace VideoPlayerController
             }
         }
 
+        /// <summary>
+        /// Gets the mute state of the master volume. 
+        /// While the volume can be muted the <see cref="GetMasterVolume"/> will still return the pre-muted volume value.
+        /// </summary>
+        /// <returns>false if not muted, true if volume is muted</returns>
         public static bool GetMasterVolumeMute()
         {
             IAudioEndpointVolume masterVol = null;
@@ -77,6 +63,10 @@ namespace VideoPlayerController
             }
         }
 
+        /// <summary>
+        /// Sets the master volume to a specific level
+        /// </summary>
+        /// <param name="newLevel">Value between 0 and 100 indicating the desired scalar value of the volume</param>
         public static void SetMasterVolume(float newLevel)
         {
             IAudioEndpointVolume masterVol = null;
@@ -86,7 +76,7 @@ namespace VideoPlayerController
                 if (masterVol == null)
                     return;
 
-                masterVol.SetMasterVolumeLevelScalar(newLevel / 100, Guid.Empty);
+                masterVol.SetMasterVolumeLevelScalar(newLevel/100, Guid.Empty);
             }
             finally
             {
@@ -95,6 +85,12 @@ namespace VideoPlayerController
             }
         }
 
+        /// <summary>
+        /// Increments or decrements the current volume level by the <see cref="stepAmount"/>.
+        /// </summary>
+        /// <param name="stepAmount">Value between -100 and 100 indicating the desired step amount. Use negative numbers to decrease
+        /// the volume and positive numbers to increase it.</param>
+        /// <returns>the new volume level assigned</returns>
         public static float StepMasterVolume(float stepAmount)
         {
             IAudioEndpointVolume masterVol = null;
@@ -127,6 +123,10 @@ namespace VideoPlayerController
             }
         }
 
+        /// <summary>
+        /// Mute or unmute the master volume
+        /// </summary>
+        /// <param name="isMuted">true to mute the master volume, false to unmute</param>
         public static void SetMasterVolumeMute(bool isMuted)
         {
             IAudioEndpointVolume masterVol = null;
@@ -145,6 +145,10 @@ namespace VideoPlayerController
             }
         }
 
+        /// <summary>
+        /// Switches between the master volume mute states depending on the current state
+        /// </summary>
+        /// <returns>the current mute state, true if the volume was muted, false if unmuted</returns>
         public static bool ToggleMasterVolumeMute()
         {
             IAudioEndpointVolume masterVol = null;
@@ -173,7 +177,7 @@ namespace VideoPlayerController
             IMMDevice speakers = null;
             try
             {
-                deviceEnumerator = (IMMDeviceEnumerator)(new MMDeviceEnumerator());
+                deviceEnumerator = (IMMDeviceEnumerator) (new MMDeviceEnumerator());
                 deviceEnumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out speakers);
 
                 Guid IID_IAudioEndpointVolume = typeof (IAudioEndpointVolume).GUID;
@@ -190,6 +194,10 @@ namespace VideoPlayerController
             }
         }
 
+        #endregion
+        
+        #region Individual Application Volume Manipulation
+
         public static float? GetApplicationVolume(int pid)
         {
             ISimpleAudioVolume volume = GetVolumeObject(pid);
@@ -199,7 +207,7 @@ namespace VideoPlayerController
             float level;
             volume.GetMasterVolume(out level);
             Marshal.ReleaseComObject(volume);
-            return level * 100;
+            return level*100;
         }
 
         public static bool? GetApplicationMute(int pid)
@@ -221,7 +229,7 @@ namespace VideoPlayerController
                 return;
 
             Guid guid = Guid.Empty;
-            volume.SetMasterVolume(level / 100, ref guid);
+            volume.SetMasterVolume(level/100, ref guid);
             Marshal.ReleaseComObject(volume);
         }
 
@@ -245,48 +253,58 @@ namespace VideoPlayerController
             try
             {
                 // get the speakers (1st render + multimedia) device
-                deviceEnumerator = (IMMDeviceEnumerator)(new MMDeviceEnumerator());
+                deviceEnumerator = (IMMDeviceEnumerator) (new MMDeviceEnumerator());
                 deviceEnumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out speakers);
 
                 // activate the session manager. we need the enumerator
-                Guid IID_IAudioSessionManager2 = typeof(IAudioSessionManager2).GUID;
+                Guid IID_IAudioSessionManager2 = typeof (IAudioSessionManager2).GUID;
                 object o;
                 speakers.Activate(ref IID_IAudioSessionManager2, 0, IntPtr.Zero, out o);
-                mgr = (IAudioSessionManager2)o;
+                mgr = (IAudioSessionManager2) o;
 
                 // enumerate sessions for on this device
                 mgr.GetSessionEnumerator(out sessionEnumerator);
                 int count;
                 sessionEnumerator.GetCount(out count);
 
-                // search for an audio session with the required name
-                // NOTE: we could also use the process id instead of the app name (with IAudioSessionControl2)
+                // search for an audio session with the required process-id
                 ISimpleAudioVolume volumeControl = null;
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < count; ++i)
                 {
-                    IAudioSessionControl2 ctl;
-                    sessionEnumerator.GetSession(i, out ctl);
-                    int cpid;
-                    ctl.GetProcessId(out cpid);
-
-                    if (cpid == pid)
+                    IAudioSessionControl2 ctl = null;
+                    try
                     {
-                        volumeControl = ctl as ISimpleAudioVolume;
-                        break;
+                        sessionEnumerator.GetSession(i, out ctl);
+
+                        // NOTE: we could also use the app name from ctl.GetDisplayName()
+                        int cpid;
+                        ctl.GetProcessId(out cpid);
+
+                        if (cpid == pid)
+                        {
+                            volumeControl = ctl as ISimpleAudioVolume;
+                            break;
+                        }
                     }
-                    Marshal.ReleaseComObject(ctl);
+                    finally
+                    {
+                        if (ctl != null) Marshal.ReleaseComObject(ctl);
+                    }
                 }
 
                 return volumeControl;
             }
             finally
             {
-                if(sessionEnumerator != null ) Marshal.ReleaseComObject(sessionEnumerator);
+                if (sessionEnumerator != null) Marshal.ReleaseComObject(sessionEnumerator);
                 if (mgr != null) Marshal.ReleaseComObject(mgr);
                 if (speakers != null) Marshal.ReleaseComObject(speakers);
                 if (deviceEnumerator != null) Marshal.ReleaseComObject(deviceEnumerator);
             }
         }
+
+        #endregion
+
     }
 
     #region Abstracted COM interfaces from Windows CoreAudio API

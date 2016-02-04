@@ -65,6 +65,8 @@ namespace VideoPlayerController
                 // Switch player
                 _player = value;
 
+                _messageBox?.ShowMessage($"{_player} Player");
+
                 // Force a refetching of the window
                 _windowHandle = IntPtr.Zero;
             }
