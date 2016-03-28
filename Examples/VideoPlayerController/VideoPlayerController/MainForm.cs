@@ -43,7 +43,9 @@ namespace VideoPlayerController
         /// </summary>
         private Players _player;
 
-        private OnScreenPopupForm _messageBox = new OnScreenPopupForm();
+        private OnScreenPopupForm _messageBox = new OnScreenPopupForm() {DisplayAt = DisplayLocation.BottomLeft};
+
+        private OnScreenPopupForm _clockBox = new OnScreenPopupForm() {DisplayAt = DisplayLocation.TopRight, BackColor = Color.DarkSlateGray};
 
         /// <summary>
         ///  Used to lock the <see cref="SendKeysToWindow"/> function critical section
@@ -95,6 +97,9 @@ namespace VideoPlayerController
 
                 _messageBox?.Dispose();
                 _messageBox = null;
+
+                _clockBox?.Dispose();
+                _clockBox = null;
 
                 _device?.Disconnect();
                 _device = null;
@@ -180,6 +185,10 @@ namespace VideoPlayerController
                     if (!string.IsNullOrEmpty(keysToSend))
                     {
                         SendKeys.SendWait(keysToSend);
+
+                        // Hack for fullscreen toggle
+                        if( keysToSend == "f" )
+                            _clockBox.ShowMessage(DateTime.Now.ToString("HH:mm"), this);
                     }
                     else
                     {
