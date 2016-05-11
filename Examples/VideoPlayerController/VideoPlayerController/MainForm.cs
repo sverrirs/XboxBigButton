@@ -116,6 +116,11 @@ namespace VideoPlayerController
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Append the version number to the form title
+            var version = typeof(MainForm).Assembly.GetName().Version;
+            if (version != null)
+                this.Text += $" | v{version}";
+
             // Initially select the VLC button
             cbUsingVLCMediaPlayer.Checked = true;
             this.Player = Players.VLC;
@@ -164,6 +169,14 @@ namespace VideoPlayerController
                     return;
                 }
 
+                // If the start button is pressed then we just want to show the current time overlay
+                if (buttons.IsPressed(Buttons.Start))
+                {
+                    _clockBox.ShowMessage(DateTime.Now.ToString("HH:mm"), this);
+                    _lastKeyTime = new Tuple<Controller, Buttons, DateTime>(controller, buttons, timeNow);
+                    return;
+                }
+
                 // If we can't find the correct window then exit
                 if (!FindWindow(this.Player))
                 {
@@ -187,8 +200,8 @@ namespace VideoPlayerController
                         SendKeys.SendWait(keysToSend);
 
                         // Hack for fullscreen toggle
-                        if( keysToSend == "f" )
-                            _clockBox.ShowMessage(DateTime.Now.ToString("HH:mm"), this);
+                        /*if( keysToSend == "f" )
+                            _clockBox.ShowMessage(DateTime.Now.ToString("HH:mm"), this);*/
                     }
                     else
                     {
@@ -332,6 +345,10 @@ namespace VideoPlayerController
             // Mute
             /*if (buttons.IsPressed(Buttons.Y))
                 keys += "m";*/
+
+            // Refresh the browser window
+            if (buttons.IsPressed(Buttons.X))
+                keys += "^({F5})";
 
             return keys;
         }
