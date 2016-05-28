@@ -444,7 +444,10 @@ namespace VideoPlayerController
             var movieWindowBounds = GetWindowBounds(_windowHandle);
             foreach (var screen in Screen.AllScreens)
             {
-                if (screen.Bounds.Contains(movieWindowBounds))
+                // If the movie window is not fullscreen then the screen.bounds will contain the movie
+                // if the movie window is fullscreen then IT will actually contain the screen bounds :)
+                if (screen.Bounds.Contains(movieWindowBounds) ||
+                    movieWindowBounds.Contains(screen.Bounds))
                 {
                     MovieScreen = screen;
                     break;
