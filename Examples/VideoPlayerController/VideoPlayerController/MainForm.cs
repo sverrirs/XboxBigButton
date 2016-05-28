@@ -51,7 +51,24 @@ namespace VideoPlayerController
         ///  Used to lock the <see cref="SendKeysToWindow"/> function critical section
         /// </summary>
         private readonly object _buttonHandlerLock = new object();
-        
+
+        private Screen _movieScreen;
+
+        /// <summary>
+        /// The screen that the movie player that is currently selected is playing on
+        /// </summary>
+        public Screen MovieScreen
+        {
+            get { return _movieScreen; }
+            private set
+            {
+                _movieScreen = value;
+                // set the OSD controls to show up on this main screen
+                _messageBox.DisplayScreen = _movieScreen;
+                _clockBox.DisplayScreen = _movieScreen;
+            }
+        }
+
         /// <summary>
         /// Gets or sets which video player the remote controls control
         /// </summary>
@@ -77,6 +94,9 @@ namespace VideoPlayerController
         public MainForm()
         {
             InitializeComponent();
+
+            // Initialize the movie screen
+            MovieScreen = Screen.PrimaryScreen;
 
             _device = new XboxBigButtonDevice();
             _device.ButtonStateChanged += _device_ButtonStateChanged;
@@ -223,7 +243,7 @@ namespace VideoPlayerController
                     }
 
                     // Now figure out the size of the window to be able to send mouse click events to it
-                    var windowRect = GetForegroundWindowBounds(_windowHandle);
+                    var windowRect = GetWindowBounds(_windowHandle);
                     if (windowRect != Rectangle.Empty)
                     {
                         // What mouse-click should we send
@@ -281,7 +301,7 @@ namespace VideoPlayerController
             return 0;
         }
 
-        private Rectangle GetForegroundWindowBounds(IntPtr windowHandle)
+        private Rectangle GetWindowBounds(IntPtr windowHandle)
         {
             Win32.RECT rct;
             if (!Win32.GetWindowRect(windowHandle, out rct))
@@ -340,7 +360,7 @@ namespace VideoPlayerController
 
             // Fullscreen
             if (buttons.IsPressed(Buttons.Home))
-                keys += "f";
+                keys += "{F11}"; //keys += "f"; // Use the Chrome full screen command
 
             // Mute
             /*if (buttons.IsPressed(Buttons.Y))
@@ -404,6 +424,9 @@ namespace VideoPlayerController
 
         private bool FindWindow(Players player)
         {
+            // Reset the main movie screen before attempting to locate the handle again
+            //MovieScreen = Screen.PrimaryScreen;
+
             // If we don't have the VLC window yet or the window has been restarted (has a new handle)
             // then let's try to find the handle
             if (!IsWindowHandleValid(_windowHandle))
@@ -414,6 +437,22 @@ namespace VideoPlayerController
                 if (!IsWindowHandleValid(_windowHandle))
                     return false;
             }
+
+            // Figure out which screen the window is located on (in a multi screen setup)
+            // this is necessary to show the overlay window and other on-screen display 
+            // elements on the right screen (i.e. the screen the video is playing on)
+            var movieWindowBounds = GetWindowBounds(_windowHandle);
+            foreach (var screen in Screen.AllScreens)
+            {
+                if (screen.Bounds.Contains(movieWindowBounds))
+                {
+                    MovieScreen = screen;
+                    break;
+                }
+
+                MovieScreen = Screen.PrimaryScreen;
+            }
+            //MovieScreen = Screen.FromHandle(_windowHandle);
 
             return true;
         }

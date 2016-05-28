@@ -20,12 +20,19 @@ namespace VideoPlayerController
 
         public DisplayLocation DisplayAt { get; set; } = DisplayLocation.BottomLeft;
 
+        /// <summary>
+        /// The screen that the popup form is displayed on
+        /// </summary>
+        public Screen DisplayScreen { get; set; }
+
         public OnScreenPopupForm()
         {
             InitializeComponent();
 
             if (DesignMode)
                 return;
+
+            DisplayScreen = Screen.PrimaryScreen;
 
             // Create the timer, don't trigger
             _hideTimer = new Timer(_hideTimerCallback, null, Timeout.Infinite, Timeout.Infinite);
@@ -73,12 +80,12 @@ namespace VideoPlayerController
             {
                 case DisplayLocation.BottomLeft:
                     // If being shown then we want to place it in the lower bottom corner of the screen
-                    loc = new Point(0, 
-                                    Screen.PrimaryScreen.Bounds.Bottom - this.Height);
+                    loc = new Point(DisplayScreen.Bounds.X,
+                                    DisplayScreen.Bounds.Bottom - this.Height);
                     break;
                 case DisplayLocation.TopRight:                   
-                    loc = new Point(Screen.PrimaryScreen.Bounds.Right - this.Width,
-                                    Screen.PrimaryScreen.Bounds.Top);
+                    loc = new Point(DisplayScreen.Bounds.Right - this.Width,
+                                    DisplayScreen.Bounds.Top);
                     break;
             }
 
