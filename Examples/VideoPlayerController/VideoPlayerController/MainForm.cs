@@ -441,7 +441,7 @@ namespace VideoPlayerController
             // Figure out which screen the window is located on (in a multi screen setup)
             // this is necessary to show the overlay window and other on-screen display 
             // elements on the right screen (i.e. the screen the video is playing on)
-            var movieWindowBounds = GetWindowBounds(_windowHandle);
+            /*var movieWindowBounds = GetWindowBounds(_windowHandle);
             foreach (var screen in Screen.AllScreens)
             {
                 // If the movie window is not fullscreen then the screen.bounds will contain the movie
@@ -454,11 +454,33 @@ namespace VideoPlayerController
                 }
 
                 MovieScreen = Screen.PrimaryScreen;
-            }
-            //MovieScreen = Screen.FromHandle(_windowHandle);
+            }*/
+            MovieScreen = DetectScreen(_windowHandle);
 
             return true;
         }
+
+        private Screen DetectScreen(IntPtr windowHandle)
+        {
+            // Figure out which screen the window is located on (in a multi screen setup)
+            // this is necessary to show the overlay window and other on-screen display 
+            // elements on the right screen (i.e. the screen the video is playing on)
+            var movieWindowBounds = GetWindowBounds(windowHandle);
+            foreach (var screen in Screen.AllScreens)
+            {
+                // If the movie window is not fullscreen then the screen.bounds will contain the movie
+                // if the movie window is fullscreen then IT will actually contain the screen bounds :)
+                if (screen.Bounds.Contains(movieWindowBounds) ||
+                    movieWindowBounds.Contains(screen.Bounds))
+                {
+                    return screen;
+                }
+            }
+
+            // By default use the primary screen
+            return Screen.PrimaryScreen;
+        }
+
 
         private IntPtr FindWindowHandle(string windowTitle)
         {
