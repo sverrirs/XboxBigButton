@@ -5,6 +5,10 @@ A C# library and example project showing how to interface with the Xbox 360 Big 
 
 The project page can be found at [http://sverrirs.github.io/XboxBigButton/](http://sverrirs.github.io/XboxBigButton/)
 
+<p align="center">
+  <a href="https://www.paypal.me/sverrirs/1.5" target="_blank"><img border="0" src="https://www.paypalobjects.com/en_US/i/btn/x-click-but21.gif" alt="Like my work? You can donate to this project using PayPal" title="Like my work? You can donate to this project using PayPal"></a>
+</p>
+
 # Driver installer
 A downloadable binary for the driver install (both 32 and 64 bit versions) can be found under *XboxBigButton_WinUsbDriver/binaries* folder. 
 Note: These installers have not been tested with Win8 and newer so they might not work (due to the fact that Windows 8+ requires .inf files to be signed as well)
