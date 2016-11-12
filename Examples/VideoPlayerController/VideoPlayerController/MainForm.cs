@@ -218,10 +218,6 @@ namespace VideoPlayerController
                     if (!string.IsNullOrEmpty(keysToSend))
                     {
                         SendKeys.SendWait(keysToSend);
-
-                        // Hack for fullscreen toggle
-                        /*if( keysToSend == "f" )
-                            _clockBox.ShowMessage(DateTime.Now.ToString("HH:mm"), this);*/
                     }
                     else
                     {
@@ -294,9 +290,9 @@ namespace VideoPlayerController
                 return Win32.APPCOMMAND_VOLUME_DOWN;
 
             // Mute
-            if (buttons.IsPressed(Buttons.Y))
+            /*if (buttons.IsPressed(Buttons.Y))
                 return Win32.APPCOMMAND_VOLUME_MUTE;
-
+                */
             // Nothing
             return 0;
         }
@@ -325,8 +321,15 @@ namespace VideoPlayerController
                 return new Point(windowRect.Width - 350, windowRect.Height - 280);
             }
 
-            // Press that annoying "are you still watching" dialog
+            // Press the new "next episode button" in the top right corner
             if (buttons.IsPressed(Buttons.B))
+            {
+                // 281 from the right og 51 from the top
+                return new Point(windowRect.Width - 281, 51);
+            }
+
+            // Press that annoying "are you still watching" dialog
+            if (buttons.IsPressed(Buttons.Y))
             {
                 // The window is 409x286 pixels and is placed directly in the middle of the screen
                 // the continue button is in the top third part of the screen, so click 1/6th down from the top (48px) and half of the width of the screen
@@ -360,7 +363,7 @@ namespace VideoPlayerController
 
             // Fullscreen
             if (buttons.IsPressed(Buttons.Home))
-                keys += "{F11}"; //keys += "f"; // Use the Chrome full screen command
+                keys += "f"; // Use the full screen shortcut in Netflix as they changed their look 2016-nov. To use the Chrome full screen command: keys += "{F11}";
 
             // Mute
             /*if (buttons.IsPressed(Buttons.Y))
@@ -416,8 +419,8 @@ namespace VideoPlayerController
                 keys += "f";
 
             // Mute
-            if (buttons.IsPressed(Buttons.Y))
-                keys += "m";
+            //if (buttons.IsPressed(Buttons.Y))
+            //    keys += "m";
 
             return keys;
         }
@@ -438,23 +441,7 @@ namespace VideoPlayerController
                     return false;
             }
 
-            // Figure out which screen the window is located on (in a multi screen setup)
-            // this is necessary to show the overlay window and other on-screen display 
-            // elements on the right screen (i.e. the screen the video is playing on)
-            /*var movieWindowBounds = GetWindowBounds(_windowHandle);
-            foreach (var screen in Screen.AllScreens)
-            {
-                // If the movie window is not fullscreen then the screen.bounds will contain the movie
-                // if the movie window is fullscreen then IT will actually contain the screen bounds :)
-                if (screen.Bounds.Contains(movieWindowBounds) ||
-                    movieWindowBounds.Contains(screen.Bounds))
-                {
-                    MovieScreen = screen;
-                    break;
-                }
-
-                MovieScreen = Screen.PrimaryScreen;
-            }*/
+            // Find the screen that the movie is running on (important for multi-monitor setup)
             MovieScreen = DetectScreen(_windowHandle);
 
             return true;
