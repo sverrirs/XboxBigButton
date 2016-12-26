@@ -16,53 +16,45 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.cbUsingVLCMediaPlayer = new System.Windows.Forms.CheckBox();
-            this.cbUsingNetflix = new System.Windows.Forms.CheckBox();
+            this.btnCurrentPlayer = new System.Windows.Forms.Button();
+            this.lblPlayerWindowStatus = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
-            // cbUsingVLCMediaPlayer
+            // btnCurrentPlayer
             // 
-            this.cbUsingVLCMediaPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.btnCurrentPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.cbUsingVLCMediaPlayer.Appearance = System.Windows.Forms.Appearance.Button;
-            this.cbUsingVLCMediaPlayer.Checked = true;
-            this.cbUsingVLCMediaPlayer.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbUsingVLCMediaPlayer.Font = new System.Drawing.Font("Microsoft Sans Serif", 20F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cbUsingVLCMediaPlayer.Location = new System.Drawing.Point(12, 12);
-            this.cbUsingVLCMediaPlayer.Name = "cbUsingVLCMediaPlayer";
-            this.cbUsingVLCMediaPlayer.Size = new System.Drawing.Size(328, 63);
-            this.cbUsingVLCMediaPlayer.TabIndex = 0;
-            this.cbUsingVLCMediaPlayer.Text = "VLC Media Player";
-            this.cbUsingVLCMediaPlayer.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.cbUsingVLCMediaPlayer.UseVisualStyleBackColor = true;
-            this.cbUsingVLCMediaPlayer.CheckedChanged += new System.EventHandler(this.cbUsingVLCMediaPlayer_CheckedChanged);
+            this.btnCurrentPlayer.Font = new System.Drawing.Font("Microsoft Sans Serif", 26F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCurrentPlayer.Location = new System.Drawing.Point(12, 12);
+            this.btnCurrentPlayer.Name = "btnCurrentPlayer";
+            this.btnCurrentPlayer.Size = new System.Drawing.Size(394, 65);
+            this.btnCurrentPlayer.TabIndex = 0;
+            this.btnCurrentPlayer.Text = "VLC Media Player";
+            this.btnCurrentPlayer.UseVisualStyleBackColor = true;
+            this.btnCurrentPlayer.Click += new System.EventHandler(this.btnCurrentPlayer_Click);
             // 
-            // cbUsingNetflix
+            // lblPlayerWindowStatus
             // 
-            this.cbUsingNetflix.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.lblPlayerWindowStatus.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.cbUsingNetflix.Appearance = System.Windows.Forms.Appearance.Button;
-            this.cbUsingNetflix.Font = new System.Drawing.Font("Microsoft Sans Serif", 20F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cbUsingNetflix.Location = new System.Drawing.Point(12, 90);
-            this.cbUsingNetflix.Name = "cbUsingNetflix";
-            this.cbUsingNetflix.Size = new System.Drawing.Size(328, 63);
-            this.cbUsingNetflix.TabIndex = 0;
-            this.cbUsingNetflix.Text = "Netflix";
-            this.cbUsingNetflix.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.cbUsingNetflix.UseVisualStyleBackColor = true;
-            this.cbUsingNetflix.CheckedChanged += new System.EventHandler(this.cbUsingNetflix_CheckedChanged);
+            this.lblPlayerWindowStatus.Location = new System.Drawing.Point(12, 84);
+            this.lblPlayerWindowStatus.Name = "lblPlayerWindowStatus";
+            this.lblPlayerWindowStatus.Size = new System.Drawing.Size(394, 13);
+            this.lblPlayerWindowStatus.TabIndex = 1;
+            this.lblPlayerWindowStatus.Text = "Ready, click button to switch players.";
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(352, 168);
-            this.Controls.Add(this.cbUsingNetflix);
-            this.Controls.Add(this.cbUsingVLCMediaPlayer);
+            this.ClientSize = new System.Drawing.Size(418, 106);
+            this.Controls.Add(this.lblPlayerWindowStatus);
+            this.Controls.Add(this.btnCurrentPlayer);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
-            this.Text = "VLC/Netflix Remote";
+            this.Text = "Video Player Remote";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
@@ -71,8 +63,8 @@
 
         #endregion
 
-        private System.Windows.Forms.CheckBox cbUsingVLCMediaPlayer;
-        private System.Windows.Forms.CheckBox cbUsingNetflix;
+        private System.Windows.Forms.Button btnCurrentPlayer;
+        private System.Windows.Forms.Label lblPlayerWindowStatus;
     }
 }
 

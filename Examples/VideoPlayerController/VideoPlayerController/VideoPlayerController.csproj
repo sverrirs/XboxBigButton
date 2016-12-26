@@ -50,6 +50,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioManager.cs" />
+    <Compile Include="Controllers\AbstractController.cs" />
+    <Compile Include="Controllers\NetflixController.cs" />
+    <Compile Include="Controllers\ShortcutKey.cs" />
+    <Compile Include="Controllers\VLCController.cs" />
+    <Compile Include="Controllers\WMPController.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
