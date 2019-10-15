@@ -35,7 +35,7 @@ namespace VideoPlayerController
         /// <summary>
         /// The video player controllers that are currently available
         /// </summary>
-        private AbstractController[] _players = new AbstractController[] { new VLCController(), new NetflixController(), new WMPController() };
+        private AbstractController[] _players = new AbstractController[] { new VLCController(), new NetflixController(), new PrimeVideoController(), new WMPController() };
 
         private int _playerCurrent = -1;
 

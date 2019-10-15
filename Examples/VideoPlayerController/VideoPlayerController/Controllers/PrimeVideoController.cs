@@ -8,41 +8,22 @@ using XboxBigButton;
 
 namespace VideoPlayerController.Controllers
 {
-    public sealed class NetflixController : AbstractController
+    public class PrimeVideoController : AbstractController
     {
-        public NetflixController() : base("Netflix", "Netflix - ")
+        public PrimeVideoController() : base("Prime Video", "Prime Video")
         {
-
         }
 
         public override Point GetMouseClickToSend(Controller controller, Buttons buttons, Rectangle windowRect)
         {
-            // Press the next-up window in the lower right-hand corner
-            if (buttons.IsPressed(Buttons.A))
-            {
-                // 350 from the right og 280 from the bottom
-                return new Point(windowRect.Width - 350, windowRect.Height - 280);
-            }
 
-            // Press the new "next episode button" in lower right corner
+            // Press the Next Episode button in the lower right-hand corner
             if (buttons.IsPressed(Buttons.B))
-            {
-                // 281 from the right og 51 from the top
-                return new Point((int) (windowRect.Width - (windowRect.Width* 0.21)), (int) (windowRect.Height - (windowRect.Height * 0.07)));
+            {   
+                return new Point((int) (windowRect.Width - (windowRect.Width *0.1)), (int) (windowRect.Height - (windowRect.Height * 0.05)));
             }
 
-            // Press that annoying "are you still watching" dialog
-            if (buttons.IsPressed(Buttons.Y))
-            {
-                // The window is 409x286 pixels and is placed directly in the middle of the screen
-                // the continue button is in the top third part of the screen, so click 1/6th down from the top (48px) and half of the width of the screen
-                return new Point(
-                    windowRect.Width / 2,
-                    ((windowRect.Height - 286) / 2) + 48
-                    );
-            }
-
-            return Point.Empty;
+            return base.GetMouseClickToSend(controller, buttons, windowRect);
         }
 
         public override IShortcutKey GetKeysToSend(Controller controller, Buttons buttons)
@@ -63,18 +44,22 @@ namespace VideoPlayerController.Controllers
             // Skip medium backward
             if (buttons.IsPressed(Buttons.Right))
                 keys += "{RIGHT}";
-            
+
             // Fullscreen
             if (buttons.IsPressed(Buttons.Home))
                 keys += "f"; // Use the full screen shortcut in Netflix as they changed their look 2016-nov. To use the Chrome full screen command: keys += "{F11}";
 
-            // Skip intro 
+            // Mute
             if (buttons.IsPressed(Buttons.Y))
-                keys += "s";
+                keys += "m";
 
             // Refresh the browser window
             /*if (buttons.IsPressed(Buttons.X))
                 keys += "^({F5})";*/
+
+            // Cycle available subtitles
+            if (buttons.IsPressed(Buttons.A))
+                keys += "c";
 
             if (!string.IsNullOrEmpty(keys))
                 return new SendKeyShortcutKey(keys);

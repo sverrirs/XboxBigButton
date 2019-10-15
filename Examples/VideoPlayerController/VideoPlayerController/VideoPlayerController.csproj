@@ -52,6 +52,7 @@
     <Compile Include="AudioManager.cs" />
     <Compile Include="Controllers\AbstractController.cs" />
     <Compile Include="Controllers\NetflixController.cs" />
+    <Compile Include="Controllers\PrimeVideoController.cs" />
     <Compile Include="Controllers\ShortcutKey.cs" />
     <Compile Include="Controllers\VLCController.cs" />
     <Compile Include="Controllers\WMPController.cs" />
