@@ -28,14 +28,19 @@ namespace VideoPlayerController
         private Tuple<Controller, Buttons, DateTime> _lastKeyTime = null;
 
         /// <summary>
-        /// Handle to the VLC window
+        /// Handle to the player window
         /// </summary>
         private IntPtr _windowHandle = IntPtr.Zero;
 
         /// <summary>
+        /// Current title to the player window
+        /// </summary>
+        private string _windowTitle = string.Empty;
+
+        /// <summary>
         /// The video player controllers that are currently available
         /// </summary>
-        private AbstractController[] _players = new AbstractController[] { new VLCController(), new NetflixController(), new PrimeVideoController(), new WMPController() };
+        private AbstractController[] _players = new AbstractController[] { new VLCController(), new NetflixController(), new PrimeVideoController(), new RuvSarpurController(), new WMPController() };
 
         private int _playerCurrent = -1;
 
@@ -193,7 +198,7 @@ namespace VideoPlayerController
                     return;
 
                 // Figure out what keys to send to the window
-                var keysToSend = this.CurrentPlayer.GetKeysToSend(controller, buttons);
+                var keysToSend = this.CurrentPlayer.GetKeysToSend(controller, buttons, _windowTitle);
                 if( keysToSend != null )
                 { 
                     // Send the keys
@@ -278,7 +283,9 @@ namespace VideoPlayerController
             // then let's try to find the handle
             if (!IsWindowHandleValid(_windowHandle))
             {
-                _windowHandle = FindWindowHandle(windowTitle, processName);
+                var found = FindWindowHandle(windowTitle, processName);
+                _windowHandle = found.Item1;
+                _windowTitle = found.Item2;
 
                 // No valid Netflix browser windowhandle could be found, exit
                 if (!IsWindowHandleValid(_windowHandle))
@@ -313,7 +320,7 @@ namespace VideoPlayerController
         }
 
 
-        private IntPtr FindWindowHandle(string windowTitle, string processName)
+        private Tuple<IntPtr,string> FindWindowHandle(string windowTitle, string processName)
         {
             foreach (Process proc in Process.GetProcesses())
             {
@@ -327,11 +334,11 @@ namespace VideoPlayerController
                     {
                         //Debug.Print(foundTitle);
                         //Debug.Print("   " + proc.ProcessName);
-                        return proc.MainWindowHandle;
+                        return new Tuple<IntPtr, string>(proc.MainWindowHandle, foundTitle);
                     }
                 }
             }
-            return IntPtr.Zero;
+            return new Tuple<IntPtr, string>(IntPtr.Zero, string.Empty);
         }
 
         private bool IsWindowHandleValid(IntPtr windowHandle)

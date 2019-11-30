@@ -49,7 +49,7 @@ namespace VideoPlayerController.Controllers
         /// <param name="controller"></param>
         /// <param name="buttons"></param>
         /// <returns></returns>
-        public virtual IShortcutKey GetKeysToSend(Controller controller, Buttons buttons)
+        public virtual IShortcutKey GetKeysToSend(Controller controller, Buttons buttons, string currentWindowTitle)
         {
             // Volume Up
             if (buttons.IsPressed(Buttons.Up))

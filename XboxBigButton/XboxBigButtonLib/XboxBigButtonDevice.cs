@@ -108,7 +108,7 @@ namespace XboxBigButton
             {
                 _device.Interfaces[0].InPipe.Abort();
             }
-            catch (USBException e)
+            catch (USBException)
             {
                 // This exception happens if the USB device has been unplugged 
                 // before disconnecting, we can safely ignore it

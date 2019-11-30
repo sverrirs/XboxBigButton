@@ -14,7 +14,7 @@ namespace VideoPlayerController.Controllers
         {
         }
 
-        public override IShortcutKey GetKeysToSend(Controller controller, Buttons buttons)
+        public override IShortcutKey GetKeysToSend(Controller controller, Buttons buttons, string currentWindowTitle)
         {
             string keys = "";
 
@@ -61,7 +61,7 @@ namespace VideoPlayerController.Controllers
                 return new SendKeyShortcutKey(keys);
 
             // Fall-back to the default keys to send option if nothing is available
-            return base.GetKeysToSend(controller, buttons);
+            return base.GetKeysToSend(controller, buttons, currentWindowTitle);
         }
     }
 }

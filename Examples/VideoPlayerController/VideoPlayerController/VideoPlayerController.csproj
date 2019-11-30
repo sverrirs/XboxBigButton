@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>VideoPlayerController</RootNamespace>
     <AssemblyName>VideoPlayerController</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -53,6 +54,7 @@
     <Compile Include="Controllers\AbstractController.cs" />
     <Compile Include="Controllers\NetflixController.cs" />
     <Compile Include="Controllers\PrimeVideoController.cs" />
+    <Compile Include="Controllers\RuvSarpurController.cs" />
     <Compile Include="Controllers\ShortcutKey.cs" />
     <Compile Include="Controllers\VLCController.cs" />
     <Compile Include="Controllers\WMPController.cs" />
