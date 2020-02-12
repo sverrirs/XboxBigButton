@@ -9,7 +9,7 @@ namespace VideoPlayerController.Controllers
 {
     public class RuvSarpurController : AbstractController
     {
-        public RuvSarpurController() : base("RÚV Sarpur", " | RÚV Sjónvarp")
+        public RuvSarpurController() : base("RÚV Sarpur", " | RÚV")
         {
         }
 

@@ -33,11 +33,6 @@ namespace VideoPlayerController
         private IntPtr _windowHandle = IntPtr.Zero;
 
         /// <summary>
-        /// Current title to the player window
-        /// </summary>
-        private string _windowTitle = string.Empty;
-
-        /// <summary>
         /// The video player controllers that are currently available
         /// </summary>
         private AbstractController[] _players = new AbstractController[] { new VLCController(), new NetflixController(), new PrimeVideoController(), new RuvSarpurController(), new WMPController() };
@@ -198,7 +193,8 @@ namespace VideoPlayerController
                     return;
 
                 // Figure out what keys to send to the window
-                var keysToSend = this.CurrentPlayer.GetKeysToSend(controller, buttons, _windowTitle);
+                var windowTitleBarText = Win32.GetWindowTitleBarText(_windowHandle);
+                var keysToSend = this.CurrentPlayer.GetKeysToSend(controller, buttons, windowTitleBarText);
                 if( keysToSend != null )
                 { 
                     // Send the keys
@@ -283,9 +279,7 @@ namespace VideoPlayerController
             // then let's try to find the handle
             if (!IsWindowHandleValid(_windowHandle))
             {
-                var found = FindWindowHandle(windowTitle, processName);
-                _windowHandle = found.Item1;
-                _windowTitle = found.Item2;
+                _windowHandle = FindWindowHandle(windowTitle, processName);
 
                 // No valid Netflix browser windowhandle could be found, exit
                 if (!IsWindowHandleValid(_windowHandle))
@@ -320,7 +314,7 @@ namespace VideoPlayerController
         }
 
 
-        private Tuple<IntPtr,string> FindWindowHandle(string windowTitle, string processName)
+        private IntPtr FindWindowHandle(string windowTitle, string processName)
         {
             foreach (Process proc in Process.GetProcesses())
             {
@@ -334,11 +328,11 @@ namespace VideoPlayerController
                     {
                         //Debug.Print(foundTitle);
                         //Debug.Print("   " + proc.ProcessName);
-                        return new Tuple<IntPtr, string>(proc.MainWindowHandle, foundTitle);
+                        return proc.MainWindowHandle;
                     }
                 }
             }
-            return new Tuple<IntPtr, string>(IntPtr.Zero, string.Empty);
+            return IntPtr.Zero;
         }
 
         private bool IsWindowHandleValid(IntPtr windowHandle)
